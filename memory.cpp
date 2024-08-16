@@ -1,7 +1,6 @@
 #include <iostream>
-#include "memory.h"
-//#include <math.h>
- #include <cmath>
+#include "memory.hpp" 
+#include <cmath>
 
 using namespace std;
 
@@ -14,7 +13,7 @@ Memory::Memory(int frameSize, int numPhysical, int numVirtual){
     virtualMemory1 = (int*)malloc(sizeof(int) * virtualMemorySize * this->frameSize);
     virtualMemory2 = (int*)malloc(sizeof(int) * virtualMemorySize * this->frameSize);
  
-    mmu = MMU(virtualMemorySize);
+    mmu = MMU(this->virtualMemorySize, this->numPhysical); // page table entry size
     // cout varaibles 
     
     cout << "frameSize 2: " << this->frameSize << endl;
@@ -32,12 +31,13 @@ Memory::~Memory(){
 
 
 void Memory::set(unsigned int threadNum, unsigned int index, int value){
+    int indexOfPhysicalAddress = mmu.mapVirtualToPhysical(threadNum, index); // example of index value is 256*3 for 4. index
     // convert phsical adress and set value
-    if(mmu.mapVirtualToPhysical(threadNum, index, value) == -1){ // -1 means return page fault
-
+    if(indexOfPhysicalAddress == -1){ // -1 means return page fault
+        // make page foult
     }else {
         // set value
-        
+        *(physicalMemory + indexOfPhysicalAddress) = value;
     }
 }
 

@@ -1,6 +1,8 @@
 #include <iostream>
 #include <pthread.h>
-#include "memory.h"
+
+#include "memory.hpp"
+#include "disk.hpp"
 
 using namespace std;
 
@@ -34,7 +36,14 @@ int main(int argc, char* argv[]){
      
 
     Memory memory(frameSiz, numPhysical, numVirtual);  // argumans -> int frameSize, int numPhysical, int numVirtual
-    
+    Disk disk("tempName.txt", 3);//numVirtual // argumans -> string fileName,int indexAmount
+    disk.write(2,999999);
+    disk.write(4,888);
+    cout << "disk 2 " <<disk.read(2) << endl;
+    cout << "disk 4 " <<disk.read(4) << endl;
+    cout <<"disk 0 " << disk.read(0) << endl;   
+    cout <<"disk 15 " << disk.read(15) << endl;   
+     
     // Create the first thread 
     if (pthread_create(&process1, NULL, threadFunction1, NULL) != 0) {
         perror("pthread_create");
