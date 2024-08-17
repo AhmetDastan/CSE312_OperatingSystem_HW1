@@ -8,6 +8,7 @@ using namespace std;
 
 class Disk{
 public: 
+    Disk(){};
     Disk(string fileName,int indexAmount); 
     
     void write(int index, int value);

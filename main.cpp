@@ -33,19 +33,12 @@ int main(int argc, char* argv[]){
     }*/
     // get sortArrays frameSize numPhysical numVirtual pageReplacement pageTablePrintInt diskFileName.dat
 
+    diskFileName = "disk.dat";
+    Memory memory(frameSiz, numPhysical, numVirtual, diskFileName);  // argumans -> int frameSize, int numPhysical, int numVirtual,string diskFileName
      
-
-    Memory memory(frameSiz, numPhysical, numVirtual);  // argumans -> int frameSize, int numPhysical, int numVirtual
-    Disk disk("tempName.txt", 3);//numVirtual // argumans -> string fileName,int indexAmount
-    disk.write(2,999999);
-    disk.write(4,888);
-    cout << "disk 2 " <<disk.read(2) << endl;
-    cout << "disk 4 " <<disk.read(4) << endl;
-    cout <<"disk 0 " << disk.read(0) << endl;   
-    cout <<"disk 15 " << disk.read(15) << endl;   
-     
+    memory.set(2, 50, 1000); // argumans -> unsigned int threadNum, unsigned int index, int value
     // Create the first thread 
-    if (pthread_create(&process1, NULL, threadFunction1, NULL) != 0) {
+ /*   if (pthread_create(&process1, NULL, threadFunction1, NULL) != 0) {
         perror("pthread_create");
         exit(EXIT_FAILURE);
     }
@@ -59,7 +52,7 @@ int main(int argc, char* argv[]){
     // Wait for the threads to finish
     pthread_join(process1, NULL);
     pthread_join(process2, NULL);
-
+*/
 
 
     freeMemory();

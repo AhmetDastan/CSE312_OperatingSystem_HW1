@@ -16,17 +16,19 @@ struct mmuPageTable
     bool *referencedBit;
     int *pageFrame;
 };
+ 
 
 class MMU {
 public:
     MMU(){};
     MMU(int virtualEntryAmount, int physicalEntryAmount);
     ~MMU(); 
-    int mapVirtualToPhysical(int threadNum, int virtualEntryLine);
+    int* mapVirtualToPhysical(int threadNum, int virtualEntryLine);
     int getPhsicalAddress(); 
     void pageFaultSignal(); 
     
-    int clockPageAlrorithm(int threadNum, int virtualEntryLine);
+    int* clockPageAlrorithm(int threadNum, int virtualEntryLine);
+    int swapPage(int threadNum, int virtualEntryLine);
 private:
     void initilisePageTables(int pageTableEntryAmount);
     void initilisePhysicalReferenceTable(int physicalEntryAmount);
@@ -39,6 +41,10 @@ private:
     int clockAlgorithmCurrentPoint;
     
     mmuPageTable pageTable1, pageTable2; 
+
+    void printPageTable(mmuPageTable pageTable);
+    void printPhysicalReferenceTable();
+ 
 };
 
 #endif

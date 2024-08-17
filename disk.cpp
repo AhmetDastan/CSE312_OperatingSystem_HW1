@@ -9,7 +9,7 @@ using namespace std;
 
 Disk::Disk(string fileName, int indexAmount){
     this->fileName = fileName; 
-    this->indexAmount = static_cast<int>(pow(2,++indexAmount));
+    this->indexAmount = indexAmount;
     initiliseFile();
 }
  
@@ -24,7 +24,7 @@ void Disk::initiliseFile(){
 
 void Disk::write(int index, int value){
     ifstream file(fileName);  
-    ofstream tempFile("temp.txt", ios::out); // temp file
+    ofstream tempFile("temp.txt"); // temp file
     string line;
     if(file.is_open()){
         for(int i = 0; i < index; ++i){
@@ -51,7 +51,10 @@ int Disk::read(int index){      // index include offset
     if(file.is_open()){
         string line;
         for(int i = 0; i <= index; ++i){
-            getline(file,line);
+            if(!getline(file,line)){
+                file.close();
+                return -1;
+            }
         }
         file.close();
         return stoi(line);
