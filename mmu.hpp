@@ -27,8 +27,15 @@ public:
     int getPhsicalAddress(); 
     void pageFaultSignal(); 
     
-    int* clockPageAlrorithm(int threadNum, int virtualEntryLine);
-    int swapPage(int threadNum, int virtualEntryLine);
+    int* clockPageAlrorithm(int threadNum, int virtualEntryLine); 
+
+    void printPageTable1();
+    void printPageTable2();
+
+    int pageReplacementCounterForThread1 = 0;
+    int pageReplacementCounterForThread2 = 0;
+    int pageMissCounterForThread1 = 0;
+    int pageMissCounterForThread2 = 0;
 private:
     void initilisePageTables(int pageTableEntryAmount);
     void initilisePhysicalReferenceTable(int physicalEntryAmount);
@@ -39,10 +46,11 @@ private:
     int *physicalReferenceTable;
 
     int clockAlgorithmCurrentPoint;
-    
+     
+protected:  
     mmuPageTable pageTable1, pageTable2; 
 
-    void printPageTable(mmuPageTable pageTable);
+    
     void printPhysicalReferenceTable();
  
 };

@@ -56,7 +56,7 @@ int Disk::read(int index){      // index include offset
                 return -1;
             }
         }
-        file.close();
+        file.close(); 
         return stoi(line);
     }
     return -1;
