@@ -117,7 +117,7 @@ int* MMU::mapVirtualToPhysical(int threadNum, int virtualEntryLine){ // sanal li
 }
 
 void MMU::pageFaultSignal(){
-    cout << "Page Fault Signal" << endl;
+    //cout << "Page Fault Signal" << endl;
 }
 
 int* MMU::clockPageAlrorithm(int threadNum, int virtualEntryLine){

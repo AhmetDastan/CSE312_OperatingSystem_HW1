@@ -55,8 +55,7 @@ int Disk::read(int index){      // index include offset
                 return -1;
             }
         } 
-    }
-    cout << "segmentation disk read\n";
+    } 
     file.close();
     try {
         return stoi(line);
