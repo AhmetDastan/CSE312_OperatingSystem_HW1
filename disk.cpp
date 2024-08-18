@@ -17,7 +17,7 @@ Disk::Disk(string fileName, int indexAmount){
 void Disk::initiliseFile(){
     ofstream file(fileName, ios::out); 
     for(int i = 0; i < indexAmount; ++i){
-        file << "00000" << endl;
+        file << "0000000" << endl;
     }
     file.close();
 }
@@ -47,18 +47,22 @@ void Disk::write(int index, int value){
 
 int Disk::read(int index){      // index include offset
     ifstream file(fileName);
-
-    if(file.is_open()){
-        string line;
+    string line;
+    if(file.is_open()){ 
         for(int i = 0; i <= index; ++i){
             if(!getline(file,line)){
                 file.close();
                 return -1;
             }
-        }
-        file.close();
-        return stoi(line);
+        } 
     }
-    return -1;
+    cout << "segmentation disk read\n";
+    file.close();
+    try {
+        return stoi(line);
+    } catch (const invalid_argument& e) {
+        cerr << "Error: Invalid value in file, cannot convert to integer." << endl;
+        return -1;
+    }
 }
  

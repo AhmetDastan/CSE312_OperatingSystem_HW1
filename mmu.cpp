@@ -48,64 +48,71 @@ void MMU::initilisePhysicalReferenceTable(int physicalEntryAmount){
     }
 }
  
-int* MMU::mapVirtualToPhysical(int threadNum, int virtualEntryLine){ // sanal lineda ozel yer var mi yoksa page foult dondur swap yap
-    //printPageTable(pageTable1);
-    //printPhysicalReferenceTable();
-    cout << "map v to p and venrtyLine "<< virtualEntryLine << endl;
+int* MMU::mapVirtualToPhysical(int threadNum, int virtualEntryLine){ // sanal lineda ozel yer var mi yoksa page foult dondur swap yap 
+    
     pageFault = false;
     int indexOfPhysicalAddress = -1;
     int* pageReplacementInf;  // 0: phsical frame index, 1: oldVirtualTable, 2: oldVirtualEntryLine, 3: oldVirtualEntryLineModifierBit
     if(threadNum == 1){
-        cout <<" pageTable1.presentBit[virtualEntryLine] " << pageTable1.presentBit[virtualEntryLine] << endl;
+        
         if(pageTable1.presentBit[virtualEntryLine]){    // if have a poin to physical memory send adress atherwise do page replacement
-            indexOfPhysicalAddress = pageTable1.pageFrame[virtualEntryLine];
+            indexOfPhysicalAddress = pageTable1.pageFrame[virtualEntryLine]; 
         }else{  // find proper place in phsical table for virtual entry, otherwise do swap
-            for(int i = 0; i < physicalEntryAmount/2; i++){
-                cout <<i <<". phsical entry at ref table " << physicalReferenceTable[i]<< endl;
+            ++pageMissCounterForThread1;
+            for(int i = 0; i < physicalEntryAmount/2; i++){ 
                 if(physicalReferenceTable[i] == -1){ // founded empty space
                     physicalReferenceTable[i] = virtualEntryLine;
                     pageTable1.presentBit[virtualEntryLine] = true;
                     pageTable1.pageFrame[virtualEntryLine] = i;
                     pageTable1.referencedBit[virtualEntryLine] = true;
+                    pageTable1.modifiedBit[virtualEntryLine] = true;
                     indexOfPhysicalAddress = i; 
                     break;
                 }
             }
-            cout << "index of phsical adress " << indexOfPhysicalAddress<<endl;
-            if(indexOfPhysicalAddress == -1)
+            cout << "indexOfPhysicalAddress " << indexOfPhysicalAddress<<endl;
+            if(indexOfPhysicalAddress == -1){
+                // increase page replacement counter
+                ++pageReplacementCounterForThread1;
                 pageFault = true;
+            }
         }
+        
     }else if(threadNum == 2){
         if(pageTable2.presentBit[virtualEntryLine] == true){    // if have a poin to physical memory send adress atherwise do page replacement
             indexOfPhysicalAddress = pageTable2.pageFrame[virtualEntryLine];
         }else{  // find proper place in phsical table for virtual entry, otherwise do swap
+            ++pageMissCounterForThread2;
             for(int i = physicalEntryAmount/2; i < physicalEntryAmount; i++){
                 if(physicalReferenceTable[i] == -1){
                     physicalReferenceTable[i] = virtualEntryLine;
                     pageTable2.presentBit[virtualEntryLine] = true;
                     pageTable2.referencedBit[virtualEntryLine] = true;
                     pageTable2.pageFrame[virtualEntryLine] = i;
+                    pageTable2.modifiedBit[virtualEntryLine] = true;
                     indexOfPhysicalAddress = i; 
                     break;
                 }
             } 
-            if(indexOfPhysicalAddress == -1)
+            if(indexOfPhysicalAddress == -1){
+                // increase page replacement counter
+                ++pageReplacementCounterForThread2;
                 pageFault = true;
+            }
+                
         }
     }
-    if(pageFault){
+    if(pageFault){ 
         pageFaultSignal();
-        pageReplacementInf = clockPageAlrorithm(threadNum, virtualEntryLine);
-        cout << "clock page is finished \n";
+        // 0: phsical frame index, 1: oldVirtualTable, 2: oldVirtualEntryLine, 3: oldVirtualEntryLineModifierBit of pageReplacementInf
+        pageReplacementInf = clockPageAlrorithm(threadNum, virtualEntryLine);  
     }else{
         pageReplacementInf = new int[4];
         pageReplacementInf[0] = indexOfPhysicalAddress;
         pageReplacementInf[1] = -1;
         pageReplacementInf[2] = -1;
         pageReplacementInf[3] = -1;
-    }
-     //printPageTable(pageTable2);
-     //printPhysicalReferenceTable();
+    } 
     return pageReplacementInf;
 }
 
@@ -114,16 +121,15 @@ void MMU::pageFaultSignal(){
 }
 
 int* MMU::clockPageAlrorithm(int threadNum, int virtualEntryLine){
-    cout << "clock algortihmediz \n ";
+    
     // find R == 0 bit and swap. Otherwise if you find R == 1, set to R = 0 and continue
     // check tables just true of present bit
     int pageFrame = -1;  // point to phsical frame index
-    int oldVirtualTable = -1;
+    int oldVirtualTable = 0;
     int oldVirtualEntryLine = -1;
-    int oldVirtualEntryLineModifierBit = -1;
+    int oldVirtualEntryLineModifierBit = 0;
     int* pageReplacementInf = new int[4];
-
-    cout << " thread num is " << threadNum<< endl;
+ 
 
     if(threadNum == 1){     // first look table1
         while(true){
@@ -135,6 +141,8 @@ int* MMU::clockPageAlrorithm(int threadNum, int virtualEntryLine){
                         pageFrame = pageTable1.pageFrame[clockAlgorithmCurrentPoint]; // take physical address from virtual entry
                         pageTable1.presentBit[clockAlgorithmCurrentPoint] = false;
                         pageTable1.referencedBit[clockAlgorithmCurrentPoint] = false;
+                        pageTable1.pageFrame[clockAlgorithmCurrentPoint] = -1;
+                        physicalReferenceTable[pageFrame] = -1;
                         if(pageTable1.modifiedBit[clockAlgorithmCurrentPoint] == true){
                             // update to disk
                             oldVirtualEntryLineModifierBit = 1;
@@ -149,6 +157,7 @@ int* MMU::clockPageAlrorithm(int threadNum, int virtualEntryLine){
                         pageTable1.presentBit[virtualEntryLine] = true;
                         pageTable1.pageFrame[virtualEntryLine] = pageFrame;
 
+                        physicalReferenceTable[pageFrame] = virtualEntryLine;
                         oldVirtualTable = 1;
                         break;
                     }else{
@@ -166,6 +175,8 @@ int* MMU::clockPageAlrorithm(int threadNum, int virtualEntryLine){
                         pageFrame = pageTable2.pageFrame[clockAlgorithmCurrentPoint];
                         pageTable2.presentBit[clockAlgorithmCurrentPoint] = false;
                         pageTable2.referencedBit[clockAlgorithmCurrentPoint] = false;
+                        pageTable2.pageFrame[clockAlgorithmCurrentPoint] = -1;
+                        physicalReferenceTable[pageFrame] = -1;
                         if(pageTable2.modifiedBit[clockAlgorithmCurrentPoint] == true){
                             oldVirtualEntryLineModifierBit = 1;
                             pageTable2.modifiedBit[clockAlgorithmCurrentPoint] == false;
@@ -178,6 +189,7 @@ int* MMU::clockPageAlrorithm(int threadNum, int virtualEntryLine){
                         pageTable2.presentBit[virtualEntryLine] = true;
                         pageTable2.pageFrame[virtualEntryLine] = pageFrame;
 
+                        physicalReferenceTable[pageFrame] = virtualEntryLine;
                         oldVirtualTable = 2;
                         break;
                     }else{
@@ -197,6 +209,8 @@ int* MMU::clockPageAlrorithm(int threadNum, int virtualEntryLine){
                         pageFrame = pageTable2.pageFrame[clockAlgorithmCurrentPoint];
                         pageTable2.presentBit[clockAlgorithmCurrentPoint] = false;
                         pageTable2.referencedBit[clockAlgorithmCurrentPoint] = false;
+                        pageTable2.pageFrame[clockAlgorithmCurrentPoint] = -1;
+                        physicalReferenceTable[pageFrame] = -1;
                         if(pageTable2.modifiedBit[clockAlgorithmCurrentPoint] == true){
                             oldVirtualEntryLineModifierBit = 1;
                             pageTable2.modifiedBit[clockAlgorithmCurrentPoint] == false;
@@ -209,6 +223,7 @@ int* MMU::clockPageAlrorithm(int threadNum, int virtualEntryLine){
                         pageTable2.presentBit[virtualEntryLine] = true;
                         pageTable2.pageFrame[virtualEntryLine] = pageFrame;
 
+                        physicalReferenceTable[pageFrame] = virtualEntryLine;
                         oldVirtualTable = 2;
                         break;
                     }else{
@@ -226,6 +241,8 @@ int* MMU::clockPageAlrorithm(int threadNum, int virtualEntryLine){
                         pageFrame = pageTable1.pageFrame[clockAlgorithmCurrentPoint];
                         pageTable1.presentBit[clockAlgorithmCurrentPoint] = false;
                         pageTable1.referencedBit[clockAlgorithmCurrentPoint] = false;
+                        pageTable1.pageFrame[clockAlgorithmCurrentPoint] = -1;
+                        physicalReferenceTable[pageFrame] = -1;
                         if(pageTable1.modifiedBit[clockAlgorithmCurrentPoint] == true){
                             oldVirtualEntryLineModifierBit = 1;
                             pageTable1.modifiedBit[clockAlgorithmCurrentPoint] == false;
@@ -238,6 +255,7 @@ int* MMU::clockPageAlrorithm(int threadNum, int virtualEntryLine){
                         pageTable1.presentBit[virtualEntryLine] = true;
                         pageTable1.pageFrame[virtualEntryLine] = pageFrame;
 
+                        physicalReferenceTable[pageFrame] = virtualEntryLine;
                         oldVirtualTable = 1;
                         break;
                     }else{
@@ -252,39 +270,52 @@ int* MMU::clockPageAlrorithm(int threadNum, int virtualEntryLine){
     pageReplacementInf[0] = pageFrame;
     pageReplacementInf[1] = oldVirtualTable;
     pageReplacementInf[2] = oldVirtualEntryLine;
-    pageReplacementInf[3] = oldVirtualEntryLineModifierBit;
-
+    pageReplacementInf[3] = oldVirtualEntryLineModifierBit; 
     return pageReplacementInf; 
 }
+ 
 
-int MMU::swapPage(int threadNum, int virtualEntryLine){
-    // diskten bi data gelecek ve onu phsical memorye yazacak, mevcut yeride diskte guncelleyecek eger modify olduysa
-    // bizde burada tabloyu guncellicez
-    return 4;
+void MMU::printPageTable1(){
+    cout << "|--------------------------------------------------------------------------------|" << endl;
+    cout << "|-------------------------  Page Table 1 For Thread 1" << " ---------------------------|" << endl;
+    cout << "|--------------------------------------------------------------------------------|" << endl; 
+    cout << "| Virtual Entry Line | Present Bit | Modified Bit | Referenced Bit | Page Frame  |" << endl;
+    for(int i = 0; i < pageTable1.pageTableEntryAmount; ++i){
+        cout<<"|";
+        if(i < 10) cout << "  ";
+        else if(i < 100) cout << " "; 
+        cout << "         " << i << "        |      "; // virtual line
+        cout << pageTable1.presentBit[i] << "      |       "; // present bit
+        cout << pageTable1.modifiedBit[i] << "      |         "; // modified bit
+        cout << pageTable1.referencedBit[i] << "      |       "; // referenced bit
+        cout << pageTable1.pageFrame[i] << "   "; // page frame
+        if(i < 10) cout << "  ";
+        else if(i >= 10) cout << " ";
+        cout<<endl;
+    }
+    cout << "|--------------------------------------------------------------------------------|" << endl;
+ 
 }
 
-void MMU::printPageTable(mmuPageTable pageTable){
-    cout << "Page Table Entry Amount: " << pageTable.pageTableEntryAmount << endl;
-    cout << "Present Bit: ";
-    for(int i = 0; i < pageTable.pageTableEntryAmount; i++){
-        cout << pageTable.presentBit[i] << " ";
+void MMU::printPageTable2(){
+    cout << "|--------------------------------------------------------------------------------|" << endl;
+    cout << "|-------------------------  Page Table 2 For Thread 2" << " ---------------------------|" << endl;
+    cout << "|--------------------------------------------------------------------------------|" << endl; 
+    cout << "| Virtual Entry Line | Present Bit | Modified Bit | Referenced Bit | Page Frame  |" << endl;
+    for(int i = 0; i < pageTable2.pageTableEntryAmount; ++i){
+        cout<<"|";
+        if(i < 10) cout << "  ";
+        else if(i < 100) cout << " "; 
+        cout << "         " << i << "        |      "; // virtual line
+        cout << pageTable2.presentBit[i] << "      |       "; // present bit
+        cout << pageTable2.modifiedBit[i] << "      |         "; // modified bit
+        cout << pageTable2.referencedBit[i] << "      |       "; // referenced bit
+        cout << pageTable2.pageFrame[i] << "   |"; // page frame
+        if(i < 10) cout << "  ";
+        else if(i >= 10) cout << " ";
+        cout<<endl;
     }
-    cout << endl;
-    cout << "Modified Bit: ";
-    for(int i = 0; i < pageTable.pageTableEntryAmount; i++){
-        cout << pageTable.modifiedBit[i] << " ";
-    }
-    cout << endl;
-    cout << "Referenced Bit: ";
-    for(int i = 0; i < pageTable.pageTableEntryAmount; i++){
-        cout << pageTable.referencedBit[i] << " ";
-    }
-    cout << endl;
-    cout << "Page Frame: ";
-    for(int i = 0; i < pageTable.pageTableEntryAmount; i++){
-        cout << pageTable.pageFrame[i] << " ";
-    }
-    cout << endl;
+    cout << "|--------------------------------------------------------------------------------|" << endl;
 }
 
 void MMU::printPhysicalReferenceTable(){
